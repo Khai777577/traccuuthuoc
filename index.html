@@ -13,14 +13,12 @@
         .input-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; }
         input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #218838; }
-        #result { margin-top: 25px; padding: 20px; border-radius: 8px; display: none; line-height: 1.6; }
-        .danger { background: #fff1f0; border: 1px solid #ffa39e; color: #262626; }
-        .danger h3 { color: #cf1322; margin-top: 0; }
-        .safe { background: #f6ffed; border: 1px solid #b7eb8f; color: #262626; text-align: center; }
+        button { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; width: 100%; }
+        #result { margin-top: 25px; padding: 20px; border-radius: 8px; display: none; line-height: 1.6; border: 1px solid #ddd; }
+        .danger { background: #fff1f0; border-color: #ffa39e !important; }
+        .safe { background: #f6ffed; border-color: #b7eb8f !important; text-align: center; }
         .info-item { margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
-        .info-label { font-weight: bold; color: #555; }
+        .info-label { font-weight: bold; color: #555; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -36,24 +34,23 @@
             <label>Tên hoạt chất 2:</label>
             <input type="text" id="drug2" placeholder="Ví dụ: Sotalol">
         </div>
-        <button onclick="checkInteraction()">KIỂM TRA TƯƠNG TÁC</button>
+        <button onclick="checkInteraction()">KIỂM TRA KẾT QUẢ</button>
         
         <div id="result"></div>
     </div>
 
     <script>
-        // THAY LINK CSV CỦA BÁC SĨ VÀO ĐÂY
-        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmGP91FKDb-c7b94VX0djRYcDFise7XekCs3RFAXuuh3evOKbCZIvISfTktMwDOQRXudoDwkSCID0q/pub?output=csv";
+        // DÁN LINK CSV CỦA BÁC SĨ VÀO ĐÂY
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmGP91FKDb-c7b94VX0djRYcDFise7XekCs3RFAXuuh3evOKbCZIvISfTktMwDOQRXudoDwkSCID0q/pubhtml"; 
         let drugData = [];
 
-        // Tải dữ liệu từ Sheets ngay khi trang web mở
         Papa.parse(sheetUrl, {
             download: true,
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
                 drugData = results.data;
-                console.log("Dữ liệu nạp thành công");
+                console.log("Đã nạp " + drugData.length + " cặp thuốc.");
             }
         });
 
@@ -62,28 +59,28 @@
             const d2 = document.getElementById('drug2').value.toLowerCase().trim();
             const resDiv = document.getElementById('result');
 
-            if (!d1 || !d2) { 
-                alert("Bác sĩ vui lòng nhập tên của cả 2 hoạt chất!"); 
-                return; 
-            }
+            if (!d1 || !d2) { alert("Vui lòng nhập đủ 2 tên thuốc!"); return; }
 
-            // Tìm cặp tương tác phù hợp
+            // Tìm kiếm không phân biệt tên cột (miễn là đúng thứ tự cột A, B, C, D, E)
             const interaction = drugData.find(item => {
-                const colA = (item['Hoạt chất 1'] || "").toLowerCase();
-                const colB = (item['Hoạt chất 2'] || "").toLowerCase();
+                const keys = Object.keys(item);
+                const colA = (item[keys[0]] || "").toLowerCase();
+                const colB = (item[keys[1]] || "").toLowerCase();
+                
                 return (colA.includes(d1) && colB.includes(d2)) || (colA.includes(d2) && colB.includes(d1));
             });
 
             resDiv.style.display = 'block';
             if (interaction) {
+                const keys = Object.keys(interaction);
                 resDiv.className = "danger";
-                resDiv.innerHTML = `<h3>PHÁT HIỆN TƯƠNG TÁC CHỐNG CHỈ ĐỊNH</h3>` +
-                                   `<div class="info-item"><span class="info-label">Cơ chế:</span> ${interaction['Cơ chế']}</div>` +
-                                   `<div class="info-item"><span class="info-label">Hậu quả:</span> ${interaction['Hậu quả']}</div>` +
-                                   `<div class="info-item"><span class="info-label">Xử trí:</span> ${interaction['Xử trí']}</div>`;
+                resDiv.innerHTML = `<h3 style="color:#cf1322; margin-top:0;">PHÁT HIỆN TƯƠNG TÁC!</h3>` +
+                                   `<div class="info-item"><span class="info-label">Cơ chế:</span> ${interaction[keys[2]] || "Chưa cập nhật"}</div>` +
+                                   `<div class="info-item"><span class="info-label">Hậu quả:</span> ${interaction[keys[3]] || "Chưa cập nhật"}</div>` +
+                                   `<div class="info-item"><span class="info-label">Xử trí:</span> ${interaction[keys[4]] || "Chưa cập nhật"}</div>`;
             } else {
                 resDiv.className = "safe";
-                resDiv.innerHTML = "<strong>An toàn:</strong> Không tìm thấy tương tác chống chỉ định trong danh mục 5948/QĐ-BYT.";
+                resDiv.innerHTML = "<strong>An toàn:</strong> Không tìm thấy tương tác chống chỉ định trong dữ liệu hiện có.";
             }
         }
     </script>
