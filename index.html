@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu Tương tác thuốc - BV Đầm Dơi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #0056b3; text-align: center; margin-bottom: 5px; font-size: 1.4em; }
+        .dept { text-align: center; color: #d9534f; font-weight: bold; margin-bottom: 25px; font-size: 0.9em; text-transform: uppercase; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #218838; }
+        #result { margin-top: 25px; padding: 20px; border-radius: 8px; display: none; line-height: 1.6; }
+        .danger { background: #fff1f0; border: 1px solid #ffa39e; color: #262626; }
+        .danger h3 { color: #cf1322; margin-top: 0; }
+        .safe { background: #f6ffed; border: 1px solid #b7eb8f; color: #262626; text-align: center; }
+        .info-item { margin-bottom: 10px; border-bottom: 1px dashed #ddd; padding-bottom: 5px; }
+        .info-label { font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>TRA CỨU TƯƠNG TÁC THUỐC</h2>
+        <div class="dept">Khoa Nội Tim mạch - Lão học <br> BVĐK Đầm Dơi</div>
+        
+        <div class="input-group">
+            <label>Tên hoạt chất 1:</label>
+            <input type="text" id="drug1" placeholder="Ví dụ: Amiodaron">
+        </div>
+        <div class="input-group">
+            <label>Tên hoạt chất 2:</label>
+            <input type="text" id="drug2" placeholder="Ví dụ: Sotalol">
+        </div>
+        <button onclick="checkInteraction()">KIỂM TRA TƯƠNG TÁC</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // THAY LINK CSV CỦA BÁC SĨ VÀO ĐÂY
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTmGP91FKDb-c7b94VX0djRYcDFise7XekCs3RFAXuuh3evOKbCZIvISfTktMwDOQRXudoDwkSCID0q/pub?output=csv";
+        let drugData = [];
+
+        // Tải dữ liệu từ Sheets ngay khi trang web mở
+        Papa.parse(sheetUrl, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                drugData = results.data;
+                console.log("Dữ liệu nạp thành công");
+            }
+        });
+
+        function checkInteraction() {
+            const d1 = document.getElementById('drug1').value.toLowerCase().trim();
+            const d2 = document.getElementById('drug2').value.toLowerCase().trim();
+            const resDiv = document.getElementById('result');
+
+            if (!d1 || !d2) { 
+                alert("Bác sĩ vui lòng nhập tên của cả 2 hoạt chất!"); 
+                return; 
+            }
+
+            // Tìm cặp tương tác phù hợp
+            const interaction = drugData.find(item => {
+                const colA = (item['Hoạt chất 1'] || "").toLowerCase();
+                const colB = (item['Hoạt chất 2'] || "").toLowerCase();
+                return (colA.includes(d1) && colB.includes(d2)) || (colA.includes(d2) && colB.includes(d1));
+            });
+
+            resDiv.style.display = 'block';
+            if (interaction) {
+                resDiv.className = "danger";
+                resDiv.innerHTML = `<h3>PHÁT HIỆN TƯƠNG TÁC CHỐNG CHỈ ĐỊNH</h3>` +
+                                   `<div class="info-item"><span class="info-label">Cơ chế:</span> ${interaction['Cơ chế']}</div>` +
+                                   `<div class="info-item"><span class="info-label">Hậu quả:</span> ${interaction['Hậu quả']}</div>` +
+                                   `<div class="info-item"><span class="info-label">Xử trí:</span> ${interaction['Xử trí']}</div>`;
+            } else {
+                resDiv.className = "safe";
+                resDiv.innerHTML = "<strong>An toàn:</strong> Không tìm thấy tương tác chống chỉ định trong danh mục 5948/QĐ-BYT.";
+            }
+        }
+    </script>
+</body>
+</html>
