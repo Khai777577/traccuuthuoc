@@ -1,67 +1,257 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu tương tác thuốc - BV Đầm Dơi</title>
     <style>
-        body { font-family: sans-serif; padding: 10px; background: #f4f7f6; }
-        .box { border: 2px solid #0056b3; padding: 20px; border-radius: 12px; background: white; }
-        .dept { text-align: center; color: #ce1126; font-weight: bold; margin-bottom: 15px; font-size: 0.9em; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; margin-top: 10px; }
-        #res { margin-top: 20px; display: none; padding: 15px; border-radius: 10px; line-height: 1.6; border: 1px solid #ddd; }
-        .danger { background: #fff1f0; border-left: 6px solid #f5222d !important; }
-        .safe { background: #f6ffed; border-left: 6px solid #52c41a !important; text-align: center; color: #52c41a; font-weight: bold; }
-        b { color: #ce1126; }
+        :root {
+            --primary: #0056b3;
+            --secondary: #17a2b8;
+            --danger: #dc3545;
+            --success: #28a745;
+            --bg: #f4f7f9;
+            --card: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: var(--card);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+        }
+
+        header h1 { color: var(--primary); margin: 0; font-size: 1.6rem; text-transform: uppercase; }
+        header h2 { color: var(--secondary); margin: 5px 0; font-size: 1.2rem; }
+
+        .search-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .input-box { position: relative; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input:focus { border-color: var(--primary); box-shadow: 0 0 8px rgba(0,86,179,0.2); }
+
+        .suggestions {
+            position: absolute;
+            background: white;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            z-index: 100;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .suggestions div { padding: 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; }
+        .suggestions div:hover { background: #eef2f7; color: var(--primary); }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 10px; }
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-search { background: var(--primary); color: white; }
+        .btn-add { background: #eceff1; color: #455a64; border: 1px solid #cfd8dc; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        #resultArea {
+            margin-top: 30px;
+            display: none;
+            padding: 25px;
+            border-radius: 12px;
+            line-height: 1.7;
+        }
+
+        .found { background: #fff5f5; border: 1px solid #feb2b2; animation: fadeIn 0.5s; }
+        .not-found { background: #f0fff4; border: 1px solid #9ae6b4; animation: fadeIn 0.5s; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .res-item { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .res-label { font-weight: bold; color: #2d3748; text-decoration: underline; margin-bottom: 4px; }
+        .status-tag {
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <div class="dept">KHOA NỘI TIM MẠCH - LÃO HỌC <br> BV ĐA KHOA ĐẦM DƠI</div>
-        <input type="text" id="d1" placeholder="Tên thuốc 1 (VD: amio)">
-        <input type="text" id="d2" placeholder="Tên thuốc 2 (VD: sotalol)">
-        <button onclick="check()">TRA CỨU LÂM SÀNG</button>
-        <div id="res"></div>
+
+<div class="container">
+    <header>
+        <h1>Bệnh viện Đa khoa Đầm Dơi</h1>
+        <h2>Khoa Nội Tim mạch - Lão học</h2>
+        <p style="margin:0; color:#666;">Hệ thống tra cứu tương tác & chống chỉ định</p>
+    </header>
+
+    <div class="search-section">
+        <div class="input-box">
+            <label>Hoạt chất 1:</label>
+            <input type="text" id="drug1" placeholder="Nhập hoạt chất..." autocomplete="off">
+            <div id="sug1" class="suggestions"></div>
+        </div>
+        <div class="input-box">
+            <label>Hoạt chất 2:</label>
+            <input type="text" id="drug2" placeholder="Nhập hoạt chất..." autocomplete="off">
+            <div id="sug2" class="suggestions"></div>
+        </div>
     </div>
 
-    <script>
-        // DỮ LIỆU ĐÃ TÍCH HỢP SẴN TỪ QĐ 5948/QĐ-BYT
-        const data = [
-            ["amiodaron", "sotalol", "Hiệp đồng tăng tác dụng", "Tăng nguy cơ kéo dài khoảng QT, xoắn đỉnh [cite: 176]", "Chống chỉ định phối hợp ở bệnh nhân có hội chứng QT kéo dài [cite: 176]"],
-            ["digoxin", "amiodaron", "Amiodaron ức chế P-gp làm giảm thải trừ digoxin [cite: 990]", "Tăng nồng độ digoxin, tăng nguy cơ ngộ độc [cite: 991]", "Cần giảm liều digoxin và theo dõi chặt chẽ [cite: 994, 995]"],
-            ["benazepril", "sacubitril/valsartan", "Tăng tích lũy bradykinin [cite: 202, 916]", "Tăng nguy cơ phù mạch [cite: 202, 916]", "Chống chỉ định. Chỉ dùng Sacubitril sau khi ngừng ACEI ít nhất 36 giờ [cite: 202, 917]"],
-            ["clopidogrel", "esomeprazol", "Ức chế CYP2C19 [cite: 1040]", "Giảm tác dụng kháng kết tập tiểu cầu [cite: 1040]", "Tránh phối hợp, ưu tiên dùng thuốc khác ít tương tác hơn [cite: 1041]"],
-            ["rivaroxaban", "ketoconazole", "Ức chế CYP3A4 và P-gp", "Tăng nồng độ rivaroxaban, nguy cơ xuất huyết", "Chống chỉ định phối hợp"],
-            ["simvastatin", "amiodaron", "Amiodaron ức chế chuyển hóa simvastatin [cite: 990]", "Tăng nguy cơ tiêu cơ vân [cite: 991]", "Chống chỉ định nếu simvastatin > 20mg/ngày [cite: 994]"],
-            ["warfarin", "tamoxifen", "Tamoxifen ức chế CYP2C9 [cite: 154, 999]", "Tăng nguy cơ xuất huyết [cite: 154, 999]", "Chống chỉ định ở bệnh nhân dự phòng tiên phát ung thư vú [cite: 154, 1000]"],
-            ["dabigatran", "itraconazol", "Itraconazol ức chế P-gp làm giảm thải trừ dabigatran [cite: 258, 1030]", "Tăng nồng độ dabigatran, tăng nguy cơ xuất huyết [cite: 258, 1030]", "Chống chỉ định phối hợp [cite: 258, 1003]"],
-            ["nitroglycerin", "sildenafil", "Hiệp đồng tăng nồng độ cGMP gây giãn mạch [cite: 914]", "Hạ huyết áp nghiêm trọng [cite: 914]", "Chống chỉ định phối hợp. Cách nhau ít nhất 24 giờ [cite: 915]"]
-        ];
+    <div class="btn-group">
+        <button class="btn-search" onclick="performLookup()">🔍 TRA CỨU KẾT QUẢ</button>
+        
+        <button class="btn-add" onclick="window.open('https://docs.google.com/forms/d/e/1FAIpQLSd4pkgeJC2i0GA7cXYTgDoNFBT-vdNd0IUTUCOUZb0n5SUGOg/viewform?usp=header', '_blank')">
+            ➕ NHẬP MỚI DỮ LIỆU
+        </button>
+    </div>
 
-        function check() {
-            const v1 = document.getElementById('d1').value.toLowerCase().trim();
-            const v2 = document.getElementById('d2').value.toLowerCase().trim();
-            const res = document.getElementById('res');
-            if(!v1 || !v2) return;
+    <div id="resultArea"></div>
+</div>
 
-            // Tìm kiếm thông minh (chứa từ khóa)
-            const found = data.find(row => {
-                const c1 = row[0].toLowerCase();
-                const c2 = row[1].toLowerCase();
-                return (c1.includes(v1) && c2.includes(v2)) || (c1.includes(v2) && c2.includes(v1));
-            });
+<script>
+    let db = [];
+    
+    // VỊ TRÍ 2: DÁN LINK XUẤT BẢN CSV CỦA GOOGLE SHEET VÀO DƯỚI ĐÂY
+    const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_OImRVwTFPQ4UiiTlykWaf1BFgL77BACl-GZhWxOrK3mfayXQE4CJf16KGzVfOgITEfF06X3AYSzY/pubhtml";
 
-            res.style.display = 'block';
-            if(found) {
-                res.className = "danger";
-                res.innerHTML = `<h4 style="margin:0;color:#cf1322">PHÁT HIỆN TƯƠNG TÁC</h4>` +
-                                `<div><b>Cơ chế:</b> ${found[2]}</div>` +
-                                `<div><b>Hậu quả:</b> ${found[3]}</div>` +
-                                `<div><b>Xử trí:</b> ${found[4]}</div>`;
-            } else {
-                res.className = "safe";
-                res.innerHTML = "Không tìm thấy tương tác chống chỉ định trong danh mục nhanh (Cặp thuốc này có thể an toàn hoặc chưa được nạp vào máy).";
-            }
+    async function loadSheetsData() {
+        if (!csvUrl.startsWith("http")) {
+            console.error("Chưa cấu hình link Google Sheet!");
+            return;
         }
-    </script>
+        try {
+            const response = await fetch(csvUrl);
+            const text = await response.text();
+            const rows = text.split('\n');
+            
+            db = [];
+            for (let i = 1; i < rows.length; i++) {
+                if (!rows[i].trim()) continue;
+                const parts = rows[i].split(',');
+                db.push({
+                    d1: parts[0]?.trim().toLowerCase(),
+                    d2: parts[1]?.trim().toLowerCase(),
+                    mechanism: parts[2]?.trim(),
+                    consequence: parts[3]?.trim(),
+                    action: parts[4]?.trim()
+                });
+            }
+        } catch (e) {
+            console.error("Lỗi tải dữ liệu:", e);
+        }
+    }
+
+    function setupSuggest(inputId, sugId) {
+        const inp = document.getElementById(inputId);
+        const sug = document.getElementById(sugId);
+
+        inp.addEventListener('input', () => {
+            const val = inp.value.toLowerCase();
+            sug.innerHTML = '';
+            if (!val) return;
+
+            const allDrugs = [...new Set(db.flatMap(x => [x.d1, x.d2]))];
+            const matches = allDrugs.filter(d => d && d.includes(val));
+
+            matches.forEach(m => {
+                const div = document.createElement('div');
+                div.innerText = m.toUpperCase();
+                div.onclick = () => {
+                    inp.value = m.toUpperCase();
+                    sug.innerHTML = '';
+                };
+                sug.appendChild(div);
+            });
+        });
+    }
+
+    function performLookup() {
+        const d1 = document.getElementById('drug1').value.trim().toLowerCase();
+        const d2 = document.getElementById('drug2').value.trim().toLowerCase();
+        const resDiv = document.getElementById('resultArea');
+
+        if (!d1 || !d2) {
+            alert("Bác sĩ vui lòng nhập tên cả 2 hoạt chất để đối chiếu.");
+            return;
+        }
+
+        const match = db.find(item => 
+            (item.d1 === d1 && item.d2 === d2) || (item.d1 === d2 && item.d2 === d1)
+        );
+
+        resDiv.style.display = 'block';
+
+        if (match) {
+            resDiv.className = 'found';
+            resDiv.innerHTML = `
+                <div class="status-tag" style="background:#fed7d7; color:#9b2c2c;">⚠️ CÓ TƯƠNG TÁC</div>
+                <div class="res-item"><span class="res-label">Cơ chế:</span> ${match.mechanism || 'N/A'}</div>
+                <div class="res-item"><span class="res-label">Hậu quả:</span> <span style="color:var(--danger); font-weight:bold;">${match.consequence || 'N/A'}</span></div>
+                <div class="res-item"><span class="res-label">Hướng xử trí:</span> <strong style="color:var(--primary)">${match.action || 'N/A'}</strong></div>
+            `;
+        } else {
+            resDiv.className = 'not-found';
+            resDiv.innerHTML = `
+                <div class="status-tag" style="background:#c6f6d5; color:#22543d;">✅ CHƯA GHI NHẬN TƯƠNG TÁC</div>
+                <p>Hệ thống chưa tìm thấy tương tác giữa <strong>${d1.toUpperCase()}</strong> và <strong>${d2.toUpperCase()}</strong> trong danh mục hiện tại của khoa.</p>
+            `;
+        }
+        resDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.onload = () => {
+        loadSheetsData();
+        setupSuggest('drug1', 'sug1');
+        setupSuggest('drug2', 'sug2');
+    };
+</script>
 </body>
 </html>
